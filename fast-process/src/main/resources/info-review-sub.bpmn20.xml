@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://flowable.org/bpmn">
+
+    <signal id="rejectSignal" name="rejectSignal"/>
+
+    <process id="infoReviewSub" name="信息化双部门并行-即时驳回">
+        <startEvent id="subStart"/>
+
+        <!-- 并行分叉 -->
+        <parallelGateway id="fork"/>
+
+        <!-- ========= 云谷信息化部任务 ========= -->
+        <userTask id="ygReview" name="云谷信息化部审批"
+                  flowable:assignee="${yunguReviewer}">
+            <extensionElements>
+                <flowable:taskListener event="complete"
+                                       class="com.demo.YgCompleteListener"/>
+            </extensionElements>
+        </userTask>
+
+        <!-- 驳回边界信号（中断整个子流程） -->
+        <boundaryEvent id="ygReject" attachedToRef="ygReview">
+            <signalEventDefinition signalRef="rejectSignal"/>
+        </boundaryEvent>
+
+        <!-- ========= 总部信息化部任务 ========= -->
+        <userTask id="hqReview" name="总部信息化部审批"
+                  flowable:assignee="${headquartersReviewer}">
+            <extensionElements>
+                <flowable:taskListener event="complete"
+                                       class="com.demo.HqCompleteListener"/>
+            </extensionElements>
+        </userTask>
+
+        <boundaryEvent id="hqReject" attachedToRef="hqReview">
+            <signalEventDefinition signalRef="rejectSignal"/>
+        </boundaryEvent>
+
+        <!-- 并行合并 -->
+        <parallelGateway id="join"/>
+
+        <!-- 正常通过结束 -->
+        <endEvent id="endPass">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                                            class="com.demo.SetAllPassedListener"/>
+            </extensionElements>
+        </endEvent>
+
+        <!-- 驳回结束（信号触发后跳到这里） -->
+        <endEvent id="endReject">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                                            class="com.demo.SetAllRejectListener"/>
+            </extensionElements>
+        </endEvent>
+
+        <!-- ======= 连线 ======= -->
+        <sequenceFlow sourceRef="subStart" targetRef="fork"/>
+        <sequenceFlow sourceRef="fork" targetRef="ygReview"/>
+        <sequenceFlow sourceRef="fork" targetRef="hqReview"/>
+        <sequenceFlow sourceRef="ygReview" targetRef="join"/>
+        <sequenceFlow sourceRef="hqReview" targetRef="join"/>
+        <sequenceFlow sourceRef="join" targetRef="endPass"/>
+
+        <!-- 任一驳回：直接到 endReject -->
+        <sequenceFlow sourceRef="ygReject" targetRef="endReject"/>
+        <sequenceFlow sourceRef="hqReject" targetRef="endReject"/>
+    </process>
+</definitions>

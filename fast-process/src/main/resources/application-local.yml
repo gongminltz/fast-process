@@ -1,0 +1,42 @@
+# 数据库配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/fast_process?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2b8&nullCatalogMeansCurrent=true
+    username: gongmin
+    password: gongmin
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# 日志级别配置
+logging:
+  level:
+    root: info
+    com.gm: debug
+
+# 请假流程相关配置
+process-config:
+  process:
+    - processDefinitionId: 'fileCopyMain:5:57a4d6f1-c13a-11f0-b005-00ff2df90d69'
+      taskList:
+        - key: apply
+          status: 1
+          statusName: 文件拷出申请
+          # 操作名称，操作类型对应名称索引
+          operateNames: 提交
+        - key: deptMgr
+          status: 2
+          statusName: 部门经理审批
+          # 操作名称，操作类型对应名称索引
+          operateNames: 同意,打回
+        - key: ygReview
+          status: 3
+          statusName: 云谷信息化部审批
+          # 操作名称，操作类型对应名称索引
+          operateNames: 同意,打回
+        - key: hqReview
+          status: 4
+          statusName: 总部信息化部审批
+          # 操作名称，操作类型对应名称索引
+          operateNames: 同意,打回
+        - key: end
+          status: 100
+          statusName: 完成

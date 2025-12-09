@@ -1,0 +1,13 @@
+# 请假流程相关配置
+holiday-request-task:
+  list:
+    - key: requestHoliday
+      status: 1
+      statusName: 请假申请
+      # 操作名称，操作类型对应名称索引
+      operateNames: 提交
+    - key: approveTask
+      status: 2
+      statusName: 上级主管审批
+      # 操作名称，操作类型对应名称索引
+      operateNames: 同意,打回,拒绝

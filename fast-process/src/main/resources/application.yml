@@ -1,0 +1,21 @@
+server:
+  port: 10001
+  servlet:
+    context-path: /process
+
+spring:
+  profiles:
+    active: local
+  application:
+    name: fast-process
+
+
+# mybatis配置
+mybatis-plus:
+  # 别名包,实体类的路径
+  type-aliases-package: com.gm.process.entity
+  # 将所有的映射文件全部加载
+  mapper-locations: classpath:/mapper/*.xml
+  # 开启驼峰映射
+  configuration:
+    map-underscore-to-camel-case: true

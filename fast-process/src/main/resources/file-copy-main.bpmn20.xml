@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://flowable.org/bpmn">
+
+    <process id="fileCopyMain" name="文件拷出申请-即时驳回版">
+        <startEvent id="start"/>
+
+        <!-- 员工提交 -->
+        <userTask id="apply" name="提交文件拷出申请"
+                  flowable:assignee="${userId}"/>
+
+        <!-- 部门经理审批 -->
+        <userTask id="deptMgr" name="部门经理审批">
+            <extensionElements>
+                <flowable:taskListener event="create"
+                                       class="com.demo.AssignDeptManagerListener"/>
+            </extensionElements>
+        </userTask>
+
+        <exclusiveGateway id="gwDept"/>
+
+        <!-- 并行双部门审批（子流程） -->
+        <callActivity id="parallelReview" name="信息化双部门并行审批"
+                      calledElement="infoReviewSub"
+                      flowable:inheritVariables="true">
+            <extensionElements>
+                <!-- 子流程返回总体结果 -->
+                <flowable:out source="allPassed" target="allPassed"/>
+            </extensionElements>
+        </callActivity>
+
+        <exclusiveGateway id="gwBoth"/>
+
+        <endEvent id="end"/>
+
+        <!-- ======= 连线 ======= -->
+        <sequenceFlow sourceRef="start" targetRef="apply"/>
+        <sequenceFlow sourceRef="apply" targetRef="deptMgr"/>
+        <sequenceFlow sourceRef="deptMgr" targetRef="gwDept"/>
+        <sequenceFlow sourceRef="gwDept" targetRef="parallelReview">
+            <conditionExpression>${operateType == 0}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow sourceRef="gwDept" targetRef="apply">
+            <conditionExpression>${operateType == 1}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- 子流程结束后的网关：只要 allPassed=false 就回退 -->
+        <sequenceFlow sourceRef="parallelReview" targetRef="gwBoth"/>
+        <sequenceFlow sourceRef="gwBoth" targetRef="end">
+            <conditionExpression>${allPassed == true}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow sourceRef="gwBoth" targetRef="apply">
+            <conditionExpression>${allPassed == false}</conditionExpression>
+        </sequenceFlow>
+    </process>
+</definitions>
